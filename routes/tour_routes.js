@@ -5,14 +5,12 @@ const tourController = require('../controllers/tourController');
 // Create router
 const router = express.Router();
 
-// Middleware to check if id exist
-router.param('id', tourController.checkID);
-
 // Routes
-router
-   .route('/')
-   .get(tourController.getAllTours)
-   .post(tourController.checkBody, tourController.createTour);
+router.route('/top-5-cheap').get(tourController.aliasTopTours, tourController.getAllTours);
+router.route('/tour-stats').get(tourController.getTourStats);
+router.route('/monthly-plan/:year').get(tourController.getMonthlyPlan);
+
+router.route('/').get(tourController.getAllTours).post(tourController.createTour);
 router
    .route('/:id')
    .get(tourController.getTour)

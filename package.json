@@ -4,15 +4,19 @@
   "description": "Nodejs and Mongodb project",
   "main": "app.js",
   "scripts": {
-    "start:dev": "nodemon server.js",
-    "start:prod": "NODE_ENV=production nodemon server.js"
+    "start": "nodemon server.js",
+    "start:prod": "NODE_ENV=production nodemon server.js",
+    "debug": "ndb server.js"
   },
   "author": "Farhan",
   "license": "ISC",
   "dependencies": {
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
-    "morgan": "^1.10.0"
+    "mongoose": "^5.9.22",
+    "morgan": "^1.10.0",
+    "slugify": "^1.4.4",
+    "validator": "^13.1.1"
   },
   "devDependencies": {
     "eslint": "^7.4.0",
@@ -24,5 +28,8 @@
     "eslint-plugin-prettier": "^3.1.4",
     "eslint-plugin-react": "^7.20.3",
     "prettier": "^2.0.5"
+  },
+  "engines": {
+    "node": ">=10.0.0"
   }
 }
