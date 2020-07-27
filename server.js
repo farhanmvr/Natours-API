@@ -3,7 +3,7 @@ const dotenv = require('dotenv');
 
 // Uncaught exception like accessing a variable which does't exist
 process.on('uncaughtException', (err) => {
-   console.log('UNCAUGHT EXCEPTION ----- Shutting down....');
+   console.log('UNCAUGHT EXCEPTION ----- server shutting down....');
    console.log(err.name, err.message);
    process.exit(1); // 0 for success 1 for uncalled exception
    // eg: console.log(x);
