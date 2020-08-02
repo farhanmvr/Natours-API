@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const slugify = require('slugify');
 // const validator = require('validator');
 
+// const User = require('./userModel');
+
 // Tour Schema
 const tourSchema = new mongoose.Schema(
    {
@@ -36,6 +38,7 @@ const tourSchema = new mongoose.Schema(
          default: 4.5,
          min: [1, 'Rating must be above 1.0'],
          max: [5, 'Rating must be below 5.0'],
+         set: (val) => Math.round((val * 10) / 10), // to get eg: 4.6666 as 4.7 not 5
       },
       ratingsQuantity: {
          type: Number,
@@ -81,6 +84,37 @@ const tourSchema = new mongoose.Schema(
          type: Boolean,
          default: false,
       },
+      startLocation: {
+         // GeoJSON
+         type: {
+            type: String,
+            default: 'Point',
+            enum: ['Point'],
+         },
+         coordinates: [Number], // expect array of numbers
+         address: String,
+         description: String,
+      },
+      locations: [
+         {
+            type: {
+               type: String,
+               default: 'Point',
+               enum: ['Point'],
+            },
+            coordinates: [Number],
+            address: String,
+            description: String,
+            day: Number,
+         },
+      ],
+      // guides: Array, // for embedded
+      guides: [
+         {
+            type: mongoose.Schema.ObjectId,
+            ref: 'User', // don't even need to import User
+         },
+      ],
    },
    {
       toJSON: { virtuals: true },
@@ -88,10 +122,22 @@ const tourSchema = new mongoose.Schema(
    }
 );
 
+// tourSchema.index({ price: 1}); // 1 for ascending order and -1 for descending order
+tourSchema.index({ price: 1, ratingsAverage: -1 }); // compound indexing
+tourSchema.index({ slug: 1 });
+tourSchema.index({ startLocation: '2dsphere' });
+
 // Virtual props
 tourSchema.virtual('durationWeeks').get(function () {
    return this.duration / 7;
    // To get this key word use normal function, don't use arrow function
+});
+
+// Virtual pupulate
+tourSchema.virtual('reviews', {
+   ref: 'Review',
+   foreignField: 'tour',
+   localField: '_id',
 });
 
 // Mongoose middleware
@@ -102,6 +148,18 @@ tourSchema.pre('save', function (next) {
    this.slug = slugify(this.name, { lower: true });
    next();
 });
+
+// For Embedding tour guides --- work only for creating new document
+// So need to create same login middleware to update
+// This is not doing because we are not using embedded for tour guides, we use referencing(This is just a demo)
+// tourSchema.pre('save', async function (next) {
+//    const guidesPromises = this.guides.map(async (id) => await User.findById(id));
+//    // since we are using await inside the function map will return array of promises
+//    this.guides = await Promise.all(guidesPromises); // run all promises at a time
+
+//    next();
+// });
+
 // tourSchema.pre('save', function (next) {
 //    console.log('will save document.....');
 //    next();
@@ -123,6 +181,15 @@ tourSchema.pre(/^find/, function (next) {
    // this.start = Date.now();
    next();
 });
+// for populating guides fields
+tourSchema.pre(/^find/, function (next) {
+   this.populate({
+      path: 'guides',
+      select: '-__v -passwordChangedAt', // exclude fields
+   });
+
+   next();
+});
 
 // tourSchema.post(/^find/, function (docs, next) {
 //    console.log(`Query took ${Date.now() - this.start} milliseconds`);
@@ -131,14 +198,14 @@ tourSchema.pre(/^find/, function (next) {
 // });
 
 // 3) Aggregation middleware
-tourSchema.pre('aggregate', function (next) {
-   // 'this' points current aggregation object
-   // To avoid secret tour
-   this.pipeline().unshift({
-      $match: { secretTour: { $ne: true } }, // Add another stage
-   }); // unshift to add at the begening of an array
-   next();
-});
+// tourSchema.pre('aggregate', function (next) {
+//    // 'this' points current aggregation object
+//    // To avoid secret tour
+//    this.pipeline().unshift({
+//       $match: { secretTour: { $ne: true } }, // Add another stage
+//    }); // unshift to add at the begening of an array
+//    next();
+// });
 
 const Tour = mongoose.model('Tour', tourSchema);
 
