@@ -608,6 +608,9 @@ body {
   -ms-scroll-snap-type: x mandatory;
   scroll-snap-type: x mandatory;
 }
+.reviews::-webkit-scrollbar {
+  display: none;
+}
 .reviews__card {
   width: 30rem;
   padding: 4rem;

@@ -65,11 +65,47 @@ exports.login = catchAsync(async (req, res, next) => {
    createSendToken(user, 200, res);
 });
 
+exports.logout = (req, res) => {
+   // Override the exact cookie without token with same
+   res.cookie('jwt', 'loggedout', {
+      expires: new Date(Date.now() + 10 * 1000),
+      httpOnly: true,
+   });
+   res.status(200).json({ status: 'success' });
+};
+
+// Only for rendered pages, no errors
+exports.isLoggedIn = async (req, res, next) => {
+   if (req.cookies.jwt) {
+      try {
+         // 1) Verify token
+         const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+
+         // 2) Check if user still exists
+         const currentUser = await User.findById(decoded.id);
+         if (!currentUser) return next();
+
+         // 3) Check if user change password after jwt was issued
+         if (currentUser.changePasswordAfter(decoded.iat)) {
+            return next();
+         }
+
+         // There is a logged in user
+         res.locals.user = currentUser;
+      } catch (err) {
+         return next();
+      }
+   }
+   next();
+};
+
 exports.protect = catchAsync(async (req, res, next) => {
    // 1) Getting token and check of it's there
    let token;
    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
+   } else if (req.cookies.jwt) {
+      token = req.cookies.jwt;
    }
    if (!token) {
       return next(new AppError('You are not logged in, Please login', 401));
@@ -90,6 +126,7 @@ exports.protect = catchAsync(async (req, res, next) => {
 
    // GRANT ACCESS TO PROTECTED ROUTE
    req.user = currentUser;
+   res.locals.user = currentUser;
    next();
 });
 

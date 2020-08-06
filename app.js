@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
@@ -5,18 +6,30 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
+const cookeiParser = require('cookie-parser');
 
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const tourRouter = require('./routes/tour_routes');
 const userRouter = require('./routes/user_routes');
 const reviewRouter = require('./routes/review_routes');
+const viewRouter = require('./routes/viewRoutes');
 
 const app = express();
 
 /////////////////////////////////////////////////////////////////////////////////
 
+app.set('view engine', 'pug'); // no need to require
+app.set('views', path.join(__dirname, 'views'));
+
+/////////////////////////////////////////////////////////////////////////////////
+
 // GLOBAL MIDDLEWARES
+
+// Serving static files
+// app.use(express.static(`${__dirname}/public`)); //Serve static files
+app.use(express.static(path.join(__dirname, 'public'))); //Serve static files
+
 // Set security HTTP headers
 app.use(helmet()); // put it in first
 
@@ -36,6 +49,10 @@ app.use('/api', limiter); // only effect url starts with /api
 
 // Body parser, reading data from body into req.body
 app.use(express.json({ limit: '10kb' })); // when body larger than 10kb, it won't be accepted
+// To parse data from urlencoded form like form submission
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+// Parse data from cookie
+app.use(cookeiParser());
 
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
@@ -57,13 +74,24 @@ app.use(
    })
 );
 
-// Serving static files
-app.use(express.static(`${__dirname}/public`)); //Serve static files
+app.use((req, res, next) => {
+   console.log(req.cookies);
+   // // Website you wish to allow to connect
+   // res.setHeader('Access-Control-Allow-Origin', '*');
 
-// app.use((req, res, next) => {
-//    console.log('new request...');
-//    next();
-// });
+   // // Request methods you wish to allow
+   // res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+
+   // // Request headers you wish to allow
+   // res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+
+   // // Set to true if you need the website to include cookies in the requests sent
+   // // to the API (e.g. in case you use sessions)
+   // res.setHeader('Access-Control-Allow-Credentials', true);
+
+   // Pass to next layer of middleware
+   next();
+});
 
 // Test Middleware
 app.use((req, res, next) => {
@@ -74,6 +102,8 @@ app.use((req, res, next) => {
 /////////////////////////////////////////////////////////////////////////////////
 
 // Routes
+app.use('/', viewRouter);
+
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
