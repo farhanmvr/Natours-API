@@ -19,7 +19,12 @@ router.use(authController.protect); // runs this middleware before the routes be
 router.get('/me', userController.getMe, userController.getUser); // get details of currently logged user
 
 router.patch('/updateMyPassword', authController.updatePassword);
-router.patch('/updateMe', userController.updateMe);
+router.patch(
+   '/updateMe',
+   userController.uploadUserPhoto,
+   userController.resizeUserPhoto,
+   userController.updateMe
+);
 router.delete('/deleteMe', userController.deleteMe);
 
 router.use(authController.restrictTo('admin')); /////////////

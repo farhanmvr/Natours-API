@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 process.on('uncaughtException', (err) => {
    console.log('UNCAUGHT EXCEPTION ----- server shutting down....');
    console.log(err.name, err.message);
+   console.log(err);
    process.exit(1); // 0 for success 1 for uncalled exception
    // eg: console.log(x);
 });

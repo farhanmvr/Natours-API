@@ -1,4 +1,5 @@
 const Tour = require('../models/tourModel');
+const Booking = require('../models/bookingModel');
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
@@ -43,6 +44,22 @@ exports.getProfile = (req, res) => {
       title: 'Your account',
    });
 };
+
+exports.getMyTours = catchAsync(async (req, res) => {
+   // using manual populate just for a rasam
+   // 1) Find all bookings
+   const bookings = await Booking.find({ user: req.user._id });
+
+   // 2) Find tours with returned IDs
+   const tourIDs = bookings.map((el) => el.tour._id);
+   console.log(tourIDs);
+   const tours = await Tour.find({ _id: { $in: tourIDs } }); // select all tours in toursIDs array
+
+   res.status(200).render('overview', {
+      title: 'My Tours',
+      tours,
+   });
+});
 
 exports.updateUserData = catchAsync(async (req, res) => {
    await User.findByIdAndUpdate(
