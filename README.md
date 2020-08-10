@@ -1,3 +1,3 @@
-# NNatours Api
+# Natours Api
 
 Build with node.js, express, mongoDB, mongoose
